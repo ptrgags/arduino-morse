@@ -1,0 +1,33 @@
+Hardware:
+
+Components Needed:
+- Arduino Uno
+- MCP23017 16-port IO Expander
+- 16 LEDs (I used two bar graphs)
+- 16 Resistors (I used 10k Ohm, but 1k could work too)
+
+Arduino Connections:
+SDA -> SDA (PIN 13) on MCP23017
+SCL -> SCL (PIN 12) on MCP23017
+5V  -> VDD (PIN 9) on MCP32017
+GND -> VSS (Pin 10) on MCP23017
+
+MCP23017 Connections:
+Pins 1-8 (IOB)     -> Each connected to 1 LED -> Resistor -> GND
+Pin 9 (VDD)        -> 5V on Arduino
+Pin 10 (VSS)       -> GND on Arduino
+Pin 11 (NC)        -> Not connected
+Pin 12 (SCL)       -> SCL on Arduino
+Pin 13 (SDA)       -> SDA on Arduino
+Pin 14 (NC)        -> Not connected
+Pins 15-17 (A0-A2) -> GND for address (0x20)
+PIN 18 (RESET)     -> 5V to disable reset
+Pins 19-20 (INTs)  -> Not connected
+Pins 21-28 (IOA)   -> Each connected to 1 LED -> Resistor -> GND
+
+
+Additional Notes:
+- The LEDs on port A are used for sending signals; they all turn
+    on or off at the same time
+- The LEDs on port B are used for displaying the last 8 bits in the 
+    morse message
