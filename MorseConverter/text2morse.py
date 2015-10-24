@@ -2,19 +2,23 @@ import serial
 import string
 import sys
 
-#Arduino sketch uses this as the start byte
-START_BYTE = b'\xFF'
 #optional padding at the end of the message
 PADDING = b'\x00'
 
 def clear(ser):
-    ser.write(START_BYTE)
+    ser.write(b'\x00')
 
+#TODO: clean this up
 def write_message(ser, message, padding = True):
+
     if padding:
-        ser.write(START_BYTE + message + PADDING)
-    else:
-        ser.write(START_BYTE + message)
+        message += PADDING
+
+    #Message prepended with length of message
+    message_length = ints_to_bytes([len(message)])
+    
+    ser.write(message_length + message)
+    
 
 def text_to_subset(text):
     '''
