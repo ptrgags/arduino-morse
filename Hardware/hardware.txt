@@ -11,6 +11,7 @@ SDA -> SDA (PIN 13) on MCP23017
 SCL -> SCL (PIN 12) on MCP23017
 5V  -> VDD (PIN 9) on MCP32017
 GND -> VSS (Pin 10) on MCP23017
+Pin 3 -> Piezo Buzzer -> GND
 
 MCP23017 Connections:
 Pins 1-8 (IOB)     -> Each connected to 1 LED -> Resistor -> GND
