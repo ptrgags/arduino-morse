@@ -10,15 +10,18 @@ const uint8_t DIR_OUTPUT = 0x00;    //For IODIRA and IODIRB
 const uint8_t VAL_ON = 0xFF;        //For IOA
 const uint8_t VAL_OFF = 0x00;       //For IOA
 
+//On-board LED
+const uint8_t PIN_LED = 13;
+
 //Output speaker
 const uint8_t PIN_SPEAKER = 3;      //Connected to a piezo speaker
 const uint8_t SPEAKER_HZ = 200;     //Pitch of the speaker tone in Hz
 
 //Bit twiddling
-const uint8_t BITS_IN_BYTE = 8;     
+const uint8_t BITS_IN_BYTE = 8;
 const uint8_t HIGH_BIT = 0x80;      //High bit in a single byte
 
-//Duration per bit of the message. 
+//Duration per bit of the message.
 //Change this to speed up or slow down
 //the message playback.
 const uint8_t BIT_TIME = 250;       //Time per bit in millis
@@ -28,7 +31,7 @@ uint8_t display_byte = VAL_OFF;     //Byte for displaying the last 8 bits in the
 uint8_t signal_byte = VAL_OFF;      //Byte that's either all 1s or all 2s, for signaling with 8 LEDs
 
 //Data double buffers
-const uint8_t BUFFER_SIZE = 100;    //Bytes in the buffer
+const uint8_t BUFFER_SIZE = 150;    //Bytes in the buffer
 uint8_t buffer_a[BUFFER_SIZE];      //Where the message is stored in binary Morse code
 uint8_t buffer_b[BUFFER_SIZE];      //Second buffer for double buffering
 bool new_message_ready = 0;         //New message ready indicator for switching the buffers
@@ -72,7 +75,7 @@ void update_message();
 void clear_display();
 
 /**
- * Play an audible sound on the 
+ * Play an audible sound on the
  * speaker for an alternate signaling
  * method
  */
@@ -80,14 +83,18 @@ void beep();
 
 void setup() {
     Serial.begin(9600);
-    
+
     //Set up the I/O port expander
     Wire.begin();
     write_reg(ADDR_IOPORT, REG_IODIRA, DIR_OUTPUT);
     write_reg(ADDR_IOPORT, REG_IODIRB, DIR_OUTPUT);
     clear_display();
-    
+
+    //Make sure the speaker is an output
     pinMode(PIN_SPEAKER, OUTPUT);
+
+    //Make sure LED pin is an output
+    pinMode(PIN_LED, OUTPUT);
 }
 
 void loop() {
@@ -112,6 +119,13 @@ void write_reg(uint8_t device, uint8_t reg, uint8_t val) {
 
 void display_message_byte() {
 
+    //The on-board LED should turn on for the first
+    //byte, but remain off all other times.
+    if (message_index == 0)
+        digitalWrite(PIN_LED, HIGH);
+    else
+        digitalWrite(PIN_LED, LOW);
+
     //If the message is empty, don't
     //do anything
     if (message_length == 0)
@@ -121,22 +135,22 @@ void display_message_byte() {
     for (uint8_t i = 0; i < BITS_IN_BYTE; i++) {
         //Get the value of the most recent bit
         uint8_t bit_val = (message_buffer[message_index] & (HIGH_BIT >> i)) ? 1 : 0;
-        
+
         //shift the new bit into the display byte
         display_byte = (display_byte << 1 | bit_val);
-        
+
         //Signal byte is either all on or all off based on
         //the current bit
         signal_byte = bit_val ? VAL_ON : VAL_OFF;
-        
+
         //Update the two LED displays
         write_reg(ADDR_IOPORT, REG_IOA, signal_byte);
         write_reg(ADDR_IOPORT, REG_IOB, display_byte);
-        
+
         //Play a tone if the most recent bit is a 1
         if (bit_val)
-            click();
-        
+            beep();
+
         delay(BIT_TIME);
     }
     message_index = (message_index + 1) % message_length;
@@ -147,7 +161,7 @@ void flip() {
     uint8_t *tmp = message_buffer;
     message_buffer = back_buffer;
     back_buffer = tmp;
-    
+
     //Update the message length
     message_length = back_buffer_length;
 }
@@ -157,7 +171,7 @@ void update_message() {
     uint8_t data_len = Serial.read();
 
     //Wait for data to come in.
-    while (Serial.available() < data_len); 
+    while (Serial.available() < data_len);
 
     //Read bytes into the back buffer
     for (uint8_t i = 0; i < data_len; i++) {
@@ -177,7 +191,7 @@ void clear_display() {
     //Write all zeros to the output registers to clear them
     write_reg(ADDR_IOPORT, REG_IOA, VAL_OFF);
     write_reg(ADDR_IOPORT, REG_IOB, VAL_OFF);
-    
+
     //Also clear the display byte to make sure it doesn't
     //turn on again
     display_byte = 0;
